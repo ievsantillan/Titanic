@@ -59,7 +59,7 @@ ncol(titanic.test)
 ```
 ## Combine the 2 data sets together to clean them both at once
 
-To comebine 2 datasets together, they need to be identital, meaning, the same column names, the same number of columns
+To combine 2 datasets together, they need to be identical; meaning, the same column names, the same number of columns
 
 ```{r}
 # check column names
@@ -67,9 +67,12 @@ names(titanic.test)
 names(titanic.train)
 
 # create a new column in the test set and fill it with NA
-
 titanic.test$Survived <- NA
+
 names(titanic.test)
+names(titanic.train)
+
+# verify number of columns in both datasets
 ncol(titanic.train)
 ncol(titanic.test)
 
@@ -136,9 +139,16 @@ table(is.na(titanic.full$Fare))
 
 ## now that our data is clean, we are now ready to build a predctive model
 
+Check the dataset structure first to ensure that the data types are correct.
+
+We need to cast Pclass, Sex and Embarked as factors.
+
 We'll need to split our data out into training and test
 
 ```{r}
+# check str of dataset
+str(titanic.full)
+
 # categorical casting (except for Survived)
 titanic.full$Pclass <- as.factor(titanic.full$Pclass)
 titanic.full$Sex <- as.factor(titanic.full$Sex)
@@ -151,14 +161,18 @@ titanic.train <- titanic.full[titanic.full$IsTrainSet ==  TRUE,]
 titanic.test <- titanic.full[titanic.full$IsTrainSet !=  TRUE,]
 
 
-# check table
+# check str of dataset
 str(titanic.full)
 
 class(titanic.full$Survived)
 
 # cast Survive as categorical
 titanic.full$Survived <- as.factor(titanic.full$Survived)
+
+# verify new class for full$Survived has been set
 class(titanic.full$Survived)
+
+# check to see how many survived
 table(titanic.full$Survived)
 ```
 ## define which columns you want to use to build your model
@@ -175,14 +189,14 @@ survived.forumla <- as.formula(survived.equation)
 ```
 
 
-## now we can create our predictive model
+## we can now create our predictive model
 
 ```{r}
 # load the randomForest package
 install.packages("randomForest")
 library(randomForest)
 
-titanic.model <- randomForest(formula = survived.forumla, data = titanic.train, ntree = 500, mtry = 3, nodesize = 0.01 * nrow(titanic.train))
+titanic.model <- randomForest(formula = survived.forumla, data = titanic.train, ntree = 500, mtry = 3, nodesize = 0.01 * nrow(titanic.test))
 
 ```
 
@@ -190,13 +204,35 @@ titanic.model <- randomForest(formula = survived.forumla, data = titanic.train, 
 
 define what features are being used
 
-it's important that we define this because we want to use the PassengerID
+it's important that we define the features because we want to use the PassengerID
 
 ```{r}
 
 features.equation <- "Pclass + Sex + Age + SibSp + Parch + Fare + Embarked"
-as.formula()
 
 Survived <- predict(titanic.model, newdata = titanic.test)
 
 ```
+
+## output
+
+```{r}
+
+PassengerID <- titanic.test$PassengerId
+output.df <- as.data.frame(PassengerID)
+output.df$Survived <- Survived
+
+# check the tail of the dataframe
+tail(output.df)
+
+# output to csv
+write.csv(output.df, file='titanic_test_survival.csv', row.names = FALSE)
+
+```
+
+## future items
+parameter tuning
+cross validation
+70/30 split
+build a regression model
+build a predictive model to predict missing values of Age/Fare instead of using median
